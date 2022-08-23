@@ -142,32 +142,32 @@ private:
 
 static BufferType createDescriptionGamePad(const Joystick &joystick) {
 
-    const uint8_t hidReportDescriptor [] = 
+    const uint8_t hidReportDescriptor [] =
     {
-      0x05, 0x01,          // UsagePage(Generic Desktop[1])
-      0x09, 0x05,          // UsageId(Gamepad[5])
-      0xA1, 0x01,          // Collection(Application)
-      0x85, 0x01,          //     ReportId(1)
-      0x09, 0x01,          //     UsageId(Pointer[1])
-      0xA1, 0x00,          //     Collection(Physical)
-      0x09, 0x30,          //         UsageId(X[48])
-      0x09, 0x31,          //         UsageId(Y[49])
-      0x09, 0x32,          //         UsageId(Z[50])
-      0x09, 0x33,          //         UsageId(Rx[51])
-      0x15, 0x00,          //         LogicalMinimum(0)
-      0x26, 0xFF, 0x03,    //         LogicalMaximum(1,023)
-      0x95, 0x04,          //         ReportCount(4)
-      0x75, 0x0A,          //         ReportSize(10)
-      0x81, 0x02,          //         Input(Data, Variable, Absolute, NoWrap, Linear, PreferredState, NoNullPosition, BitField)
-      0xC0,                //     EndCollection()
-      0x05, 0x09,          //     UsagePage(Button[9])
-      0x19, 0x01,          //     UsageIdMin(Button 1[1])
-      0x29, 0x10,          //     UsageIdMax(Button 16[16])
-      0x25, 0x01,          //     LogicalMaximum(1)
-      0x95, 0x10,          //     ReportCount(16)
-      0x75, 0x01,          //     ReportSize(1)
-      0x81, 0x02,          //     Input(Data, Variable, Absolute, NoWrap, Linear, PreferredState, NoNullPosition, BitField)
-      0xC0,                // EndCollection()
+        0x05, 0x01,          // UsagePage(Generic Desktop[1])
+        0x09, 0x05,          // UsageId(Gamepad[5])
+        0xA1, 0x01,          // Collection(Application)
+        0x85, 0x01,          //     ReportId(1)
+        0x09, 0x01,          //     UsageId(Pointer[1])
+        0xA1, 0x00,          //     Collection(Physical)
+        0x09, 0x30,          //         UsageId(X[48])
+        0x09, 0x31,          //         UsageId(Y[49])
+        0x09, 0x32,          //         UsageId(Z[50])
+        0x09, 0x33,          //         UsageId(Rx[51])
+        0x15, 0x00,          //         LogicalMinimum(0)
+        0x26, 0xFF, 0x03,    //         LogicalMaximum(1,023)
+        0x95, 0x04,          //         ReportCount(4)
+        0x75, 0x0A,          //         ReportSize(10)
+        0x81, 0x02,          //         Input(Data, Variable, Absolute, NoWrap, Linear, PreferredState, NoNullPosition, BitField)
+        0xC0,                //     EndCollection()
+        0x05, 0x09,          //     UsagePage(Button[9])
+        0x19, 0x01,          //     UsageIdMin(Button 1[1])
+        0x29, 0x10,          //     UsageIdMax(Button 16[16])
+        0x25, 0x01,          //     LogicalMaximum(1)
+        0x95, 0x10,          //     ReportCount(16)
+        0x75, 0x01,          //     ReportSize(1)
+        0x81, 0x02,          //     Input(Data, Variable, Absolute, NoWrap, Linear, PreferredState, NoNullPosition, BitField)
+        0xC0,                // EndCollection()
     };
 
     BufferType buffer;
@@ -232,32 +232,36 @@ static BufferType createDescriptionGamePad(const Joystick &joystick) {
     uint8_t h3 = state.hats[2];
 
     // axes
-    uint16_t x2 = hatx(h1);
-    uint16_t y2 = state.axes[2]; // haty(h1);
-    filler.push(x2, 10);
-    filler.push(y2, 10);
+    filler.push(hatx(h1), 10);
+    filler.push(haty(h1), 10);
     filler.push(state.axes[0], 10);
     filler.push(state.axes[1], 10);
 
+    // Hat
+    //filler.push(h3, 4);
+
     uint16_t buttons = 0;
-    bitWrite(buttons, 0, bitRead(state.buttons,5));
-    bitWrite(buttons, 1, bitRead(state.buttons,3));
-    bitWrite(buttons, 2, bitRead(state.buttons,6));
-    bitWrite(buttons, 3, bitRead(state.buttons,4));
-    bitWrite(buttons, 4, bitRead(state.buttons,7));
-    bitWrite(buttons, 5, bitRead(state.buttons,8));
-    bitWrite(buttons, 6, bitRead(state.buttons,2));
-    bitWrite(buttons, 7, bitRead(state.buttons,0));
-    if(hatx(h2) > 512) bitSet(buttons, 8);
-    if(hatx(h2) < 512) bitSet(buttons, 9);
-    if(haty(h2) < 512) bitSet(buttons, 10);
-    bitWrite(buttons, 11, bitRead(state.buttons,1));
-    if(haty(h3) > 512) bitSet(buttons, 12);
-    if(haty(h3) < 512) bitSet(buttons, 13);
-    if(hatx(h3) < 512) bitSet(buttons, 14);
-    if(hatx(h3) > 512) bitSet(buttons, 15);
+    if(hatx(h3) < 512) bitSet(buttons, 0);
+    if(haty(h3) < 512) bitSet(buttons, 1);
+    if(hatx(h3) > 512) bitSet(buttons, 2);
+    if(haty(h3) > 512) bitSet(buttons, 3);
+    bitWrite(buttons, 4, bitRead(state.buttons,6));
+    bitWrite(buttons, 5, bitRead(state.buttons,4));
+    bitWrite(buttons, 6, bitRead(state.buttons,3));
+    bitWrite(buttons, 7, bitRead(state.buttons,5));
+    if(hatx(h2) < 512) bitSet(buttons, 8);
+    bitWrite(buttons, 9, bitRead(state.buttons,8));
+    bitWrite(buttons, 10, bitRead(state.buttons,2));
+    bitWrite(buttons, 11, bitRead(state.buttons,7));
+    bitWrite(buttons, 12, bitRead(state.buttons,1));
+    bitWrite(buttons, 13, bitRead(state.buttons,0));
+    if(haty(h2) < 512) bitSet(buttons, 14);
+    if(hatx(h2) > 512) bitSet(buttons, 15);
 
     filler.push(buttons, 16);
+
+    // Throttle
+    // filler.push(state.axes[2], 10);
 
     filler.allign();
     return buffer;
