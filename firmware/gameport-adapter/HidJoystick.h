@@ -30,7 +30,7 @@ public:
     }
 
     m_joystick = joystick;
-    m_hidDescription = createDescription(*m_joystick);
+    m_hidDescription = createDescriptionGamePad(*m_joystick);
     m_subDescriptor = new HIDSubDescriptor{m_hidDescription.data, m_hidDescription.size};
     m_hidDevice.AppendDescriptor(m_subDescriptor);
 
@@ -43,7 +43,7 @@ public:
       return false;
     }
 
-    const auto packet = createPacket(*m_joystick);
+    const auto packet = createPacketGamePad(*m_joystick);
     m_hidDevice.SendReport(DEVICE_ID, packet.data, packet.size);
     return true;
   }
@@ -140,6 +140,72 @@ private:
     return buffer;
   }
 
+static BufferType createDescriptionGamePad(const Joystick &joystick) {
+
+    enum class ID : uint8_t {
+      physical = 0x00,
+      application = 0x01,
+      button = 0x09,
+      collection = 0xa1,
+      end_collection = 0xc0,
+      generic_desktop = 0x01,
+      hat_switch = 0x39,
+      input = 0x81,
+      input_const = 0x03,
+      input_data = 0x02,
+      gamepad = 0x05,
+      logical_max = 0x26,
+      logical_min = 0x15,
+      report_count = 0x95,
+      report_id = 0x85,
+      report_size = 0x75,
+      simulation_controls = 0x02,
+      throttle = 0xbb,
+      usage = 0x09,
+      usage_max = 0x29,
+      usage_min = 0x19,
+      usage_page = 0x05,
+      usage_x1 = 0x30,
+      usage_y1 = 0x31,
+      usage_x2 = 0x33,
+      usage_y2 = 0x34,
+    };
+
+    const auto &desc = joystick.getDescription();
+    BufferType buffer;
+    auto filler = BufferFiller(buffer);
+
+    filler.push(ID::usage_page).push(ID::generic_desktop);
+    filler.push(ID::usage).push(ID::gamepad);
+    filler.push(ID::collection).push(ID::application);
+    filler.push(ID::collection).push(ID::physical);
+    filler.push(ID::report_id).push(uint8_t(DEVICE_ID));
+
+    filler.push(ID::usage_page).push(ID::button);
+    filler.push(ID::usage_min).push(uint8_t(1));
+    filler.push(ID::usage_max).push(uint8_t(16));
+    filler.push(ID::logical_min).push(uint8_t(0));
+    filler.push(ID::logical_max).push(uint16_t(1));
+    filler.push(ID::report_size).push(uint8_t(1));
+    filler.push(ID::report_count).push(uint8_t(16));
+
+    filler.push(ID::input).push(ID::input_data);
+    filler.push(ID::usage_page).push(ID::generic_desktop);
+    filler.push(ID::usage).push(ID::usage_x1);
+    filler.push(ID::usage).push(ID::usage_y1);
+    filler.push(ID::usage).push(ID::usage_x2);
+    filler.push(ID::usage).push(ID::usage_y2);
+    filler.push(ID::logical_min).push(uint8_t(0));
+    filler.push(ID::logical_max).push(uint16_t(1023));
+    filler.push(ID::report_size).push(uint8_t(10));
+    filler.push(ID::report_count).push(uint8_t(4));
+    filler.push(ID::input).push(ID::input_data);
+
+    filler.push(ID::end_collection);
+    filler.push(ID::end_collection);
+    return buffer;
+  }
+
   static BufferType createPacket(const Joystick &joystick) {
 
     const auto &state = joystick.getState();
@@ -158,6 +224,59 @@ private:
     if (description.numButtons) {
       filler.push(state.buttons, description.numButtons);
     }
+
+    filler.allign();
+    return buffer;
+  }
+
+  static uint16_t hatx(uint8_t h) {
+    if(h == 2 || h == 3 || h == 4) {
+      return 1023;
+    }
+    if(h == 6 || h == 7 || h == 8) {
+      return 0;
+    }
+    return 512;
+  }
+
+  static uint16_t haty(uint8_t h) {
+    if(h == 8 || h == 1 || h == 2) {
+      return 0;
+    }
+    if(h == 6 || h == 5 || h == 4) {
+      return 1023;
+    }
+    return 512;
+  }
+
+  static BufferType createPacketGamePad(const Joystick &joystick) {
+    const auto &state = joystick.getState();
+    BufferType buffer;
+    auto filler = BufferFiller(buffer);
+    uint16_t buttons = state.buttons;
+    
+    uint8_t h1 = state.hats[0];
+    uint8_t h2 = state.hats[1];
+    uint8_t h3 = state.hats[2];
+
+    if(hatx(h2) > 512) bitSet(buttons, 9);
+    if(haty(h2) > 512) bitSet(buttons, 10);
+    if(hatx(h2) < 512) bitSet(buttons, 11);
+    if(haty(h2) < 512) bitSet(buttons, 12);
+
+    if(hatx(h3) > 512) bitSet(buttons, 13);
+    if(haty(h3) > 512) bitSet(buttons, 14);
+    if(hatx(h3) < 512) bitSet(buttons, 15);
+
+    filler.push(buttons, 16);
+
+    // axes
+    uint16_t x2 = hatx(h1);
+    uint16_t y2 = state.axes[2]; // haty(h1);
+    filler.push(x2, 10);
+    filler.push(y2, 10);
+    filler.push(state.axes[0], 10);
+    filler.push(state.axes[1], 10);
 
     filler.allign();
     return buffer;

@@ -169,7 +169,7 @@ private:
     static const uint16_t seq[] = {4, 2, 3, 10, 6, 11, 7, 9, 11, 0};
     const InterruptStopper noirq;
     for (auto i = 0u; seq[i]; i++) {
-      m_trigger.pulse(10u);
+      m_trigger.pulse(20u);
       delayMicroseconds(seq[i] * 1000u);
     }
   }
@@ -181,7 +181,7 @@ private:
   }
 
   Packet readPacket() const {
-    static const auto TIMEOUT = 10u;
+    static const auto TIMEOUT = 20u;
     auto timeout = TIMEOUT;
     auto first = true;
     Packet packet;

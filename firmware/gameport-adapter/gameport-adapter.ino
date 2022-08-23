@@ -25,33 +25,7 @@
 #include "ThrustMaster.h"
 
 static Joystick *createJoystick() {
-
-  const auto sw1 = DigitalInput<14, true>{}.isLow();
-  const auto sw2 = DigitalInput<15, true>{}.isLow();
-  const auto sw3 = DigitalInput<20, true>{}.isLow();
-  const auto sw4 = DigitalInput<21, true>{}.isLow();
-  const auto sw = sw4 << 3 | sw3 << 2 | sw2 << 1 | sw1;
-
-  switch (sw) {
-    case 0b0001:
-      return new GenericJoystick<2,4>;
-    case 0b0010:
-      return new GenericJoystick<3,4>;
-    case 0b0011:
-      return new GenericJoystick<4,4>;
-    case 0b0100:
-      return new CHFlightstickPro;
-    case 0b0101:
-      return new ThrustMaster;
-    case 0b0111:
-      return new Sidewinder;
-    case 0b1000:
-      return new GrIP;
-    case 0b1001:
-      return new Logitech;
-    default:
-      return new GenericJoystick<2,2>;
-  }
+  return new Logitech;
 }
 
 void setup() {
